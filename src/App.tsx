@@ -8,12 +8,12 @@ import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from 'fi
 // ⚠️ INSTRUCCIONES: Reemplaza los textos que dicen "TU_..." por las llaves reales
 // que te dé Firebase en el Paso 4. (Mantén las comillas "").
 const myFirebaseConfig = {
-  apiKey: "TU_API_KEY",
-  authDomain: "TU_PROYECTO.firebaseapp.com",
-  projectId: "TU_PROYECTO",
-  storageBucket: "TU_PROYECTO.appspot.com",
-  messagingSenderId: "TU_SENDER_ID",
-  appId: "TU_APP_ID"
+  apiKey: "AIzaSyAmjd0UHVW4hUdU9Ot6e4R7UE3LC5Zd86g",
+  authDomain: "md-soundscape.firebaseapp.com",
+  projectId: "md-soundscape",
+  storageBucket: "md-soundscape.firebasestorage.app",
+  messagingSenderId: "614855819468",
+  appId: "1:614855819468:web:1cefe2f0a51574e5504269"
 };
 
 // Lógica de conexión inteligente (No tocar)
