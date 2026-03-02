@@ -561,12 +561,31 @@ export default function App() {
     );
   };
 
-  switch(currentView) {
-    case 'addCard': return <AddCardView />;
-    case 'editQuiz': return <QuizEditorView />;
-    case 'reviewCards': return <ReviewCardsView />;
-    case 'takeQuiz': return <QuizTakerView />;
-    case 'browseCards': return <BrowseCardsView />;
-    default: return <Dashboard />;
-  }
+  const renderView = () => {
+    switch(currentView) {
+      case 'addCard': return <AddCardView />;
+      case 'editQuiz': return <QuizEditorView />;
+      case 'reviewCards': return <ReviewCardsView />;
+      case 'takeQuiz': return <QuizTakerView />;
+      case 'browseCards': return <BrowseCardsView />;
+      default: return <Dashboard />;
+    }
+  };
+
+  return (
+    <>
+      <style>{`
+        /* Destruye las restricciones de ancho de la plantilla de Vite */
+        html, body, #root {
+          margin: 0;
+          padding: 0 !important;
+          width: 100%;
+          max-width: 100% !important;
+          text-align: left !important;
+          background-color: ${themeKey === 'light' ? '#F9F9F9' : '#121212'};
+        }
+      `}</style>
+      {renderView()}
+    </>
+  );
 }
