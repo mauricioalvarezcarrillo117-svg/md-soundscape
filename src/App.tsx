@@ -5,8 +5,7 @@ import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged }
 import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore';
 
 // --- CONFIGURACIÓN DE FIREBASE ---
-// ⚠️ INSTRUCCIONES: Reemplaza los textos que dicen "TU_..." por las llaves reales
-// que te dé Firebase en el Paso 4. (Mantén las comillas "").
+// ⚠️ RECUERDA: Vuelve a poner TUS llaves de Firebase aquí antes de guardar en GitHub.
 const myFirebaseConfig = {
   apiKey: "AIzaSyAmjd0UHVW4hUdU9Ot6e4R7UE3LC5Zd86g",
   authDomain: "md-soundscape.firebaseapp.com",
@@ -16,18 +15,19 @@ const myFirebaseConfig = {
   appId: "1:614855819468:web:1cefe2f0a51574e5504269"
 };
 
-// Lógica de conexión inteligente (No tocar)
+// Lógica de conexión inteligente
 const isCanvasEnv = typeof __firebase_config !== 'undefined';
 const firebaseConfigStr = isCanvasEnv ? __firebase_config : null;
 const canvasConfig = firebaseConfigStr ? JSON.parse(firebaseConfigStr) : null;
-
-// Si estás en tu Vercel y ya pusiste tus llaves, usa tus llaves. Si no, intenta modo local.
 const finalConfig = isCanvasEnv ? canvasConfig : (myFirebaseConfig.apiKey !== "TU_API_KEY" ? myFirebaseConfig : null);
 
 const app = finalConfig ? initializeApp(finalConfig) : null;
 const auth = app ? getAuth(app) : null;
 const db = app ? getFirestore(app) : null;
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'md-soundscape';
+
+// Evitamos errores de Firebase reemplazando diagonales por guiones en el appId
+const rawAppId = typeof __app_id !== 'undefined' ? __app_id : 'md-soundscape';
+const safeAppId = typeof rawAppId === 'string' ? rawAppId.replace(/\//g, '-') : 'md-soundscape';
 
 // --- CONFIGURACIÓN DE TEMAS ---
 const THEMES = {
@@ -52,7 +52,7 @@ export default function App() {
 
   // --- 1. INICIALIZACIÓN DE SESIÓN (AUTENTICACIÓN) ---
   useEffect(() => {
-    if (!auth) return; // Si no hay llaves válidas, no intenta conectarse.
+    if (!auth) return;
     const initAuth = async () => {
       try {
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -74,13 +74,13 @@ export default function App() {
     if (!user || !db) return;
     setIsDbConnected(true);
 
-    const cardsRef = collection(db, 'artifacts', appId, 'users', user.uid, 'cards');
+    const cardsRef = collection(db, 'artifacts', safeAppId, 'users', user.uid, 'cards');
     const unsubCards = onSnapshot(cardsRef, 
       (snapshot) => setCards(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))),
       (error) => console.error("Error cards:", error)
     );
 
-    const quizzesRef = collection(db, 'artifacts', appId, 'users', user.uid, 'quizzes');
+    const quizzesRef = collection(db, 'artifacts', safeAppId, 'users', user.uid, 'quizzes');
     const unsubQuizzes = onSnapshot(quizzesRef, 
       (snapshot) => setQuizzes(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))),
       (error) => console.error("Error quizzes:", error)
@@ -92,7 +92,7 @@ export default function App() {
   // --- 3. FUNCIONES DE ESCRITURA SEGURAS (Nube o Local) ---
   const saveCardToDb = async (cardData) => {
     if (db && user) {
-      await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'cards', cardData.id.toString()), cardData);
+      await setDoc(doc(db, 'artifacts', safeAppId, 'users', user.uid, 'cards', cardData.id.toString()), cardData);
     } else {
       setCards(prev => {
         const idx = prev.findIndex(c => c.id === cardData.id);
@@ -104,7 +104,7 @@ export default function App() {
 
   const saveQuizToDb = async (quizData) => {
     if (db && user) {
-      await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'quizzes', quizData.id.toString()), quizData);
+      await setDoc(doc(db, 'artifacts', safeAppId, 'users', user.uid, 'quizzes', quizData.id.toString()), quizData);
     } else {
       setQuizzes(prev => {
         const idx = prev.findIndex(q => q.id === quizData.id);
@@ -116,7 +116,7 @@ export default function App() {
 
   const deleteQuizFromDb = async (quizId) => {
     if (db && user) {
-      await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'quizzes', quizId.toString()));
+      await deleteDoc(doc(db, 'artifacts', safeAppId, 'users', user.uid, 'quizzes', quizId.toString()));
     } else {
       setQuizzes(prev => prev.filter(q => q.id !== quizId));
     }
@@ -180,12 +180,21 @@ export default function App() {
               <h2 className="text-2xl font-bold">Repaso Espaciado</h2>
             </div>
             <p className={`mb-6 ${colors.text_sec}`}>Tarjetas pendientes: <span className="font-bold">{dueCards.length}</span> | Total: {cards.length}</p>
-            <div className="flex space-x-4">
+            <div className="flex flex-wrap gap-4">
               <Button colorClass={colors.accent} onClick={() => {
                 if (dueCards.length === 0) return alert("¡Al día! No tienes cartas pendientes hoy.");
                 setReviewQueue(dueCards);
                 setCurrentView('reviewCards');
-              }}>Estudiar Ahora</Button>
+              }}>Estudiar Pendientes</Button>
+              
+              {/* NUEVO BOTÓN PARA MARATÓN DE ESTUDIO */}
+              <Button colorClass={colors.accent} onClick={() => {
+                if (cards.length === 0) return alert("No tienes cartas creadas aún.");
+                const shuffled = [...cards].sort(() => Math.random() - 0.5);
+                setReviewQueue(shuffled);
+                setCurrentView('reviewCards');
+              }}>Repasar Todas</Button>
+
               <Button colorClass={colors.secondary} textColor={colors.fg} onClick={() => setCurrentView('addCard')}><span className="flex items-center">➕ Crear Carta</span></Button>
               <Button colorClass={colors.secondary} textColor={colors.fg} onClick={() => setCurrentView('browseCards')}><span className="flex items-center">📋 Ver Todas</span></Button>
             </div>
@@ -341,14 +350,23 @@ export default function App() {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [showAnswer, setShowAnswer] = useState(false);
 
-    if (reviewQueue.length === 0 || currentIndex >= reviewQueue.length) {
-      setTimeout(() => setCurrentView('dashboard'), 1500);
+    const isFinished = reviewQueue.length === 0 || currentIndex >= reviewQueue.length;
+
+    useEffect(() => {
+      if (isFinished) {
+        const timer = setTimeout(() => setCurrentView('dashboard'), 1500);
+        return () => clearTimeout(timer);
+      }
+    }, [isFinished]);
+
+    if (isFinished) {
       return (
         <div className={`min-h-screen flex items-center justify-center ${colors.bg} ${colors.fg}`}>
           <div className="text-center"><div className="text-6xl mb-4">✅</div><h2 className="text-2xl font-bold">¡Repaso Terminado!</h2></div>
         </div>
       );
     }
+    
     const currentCard = reviewQueue[currentIndex];
 
     const handleRate = async (quality) => {
